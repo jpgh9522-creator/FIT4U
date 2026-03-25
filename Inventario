@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FIT4U — Sistema de Inventario</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════ VARIABLES FIT4U ═══════════════════════════════════ */
+:root {
+  --g-light:  #7DC67A;
+  --g-mid:    #4A8C47;
+  --g-deep:   #2A5C28;
+  --g-shadow: #122B11;
+  --carbon:   #070D14;
+  --abyss:    #0B1320;
+  --slate:    #0F1B2D;
+  --steel:    #142235;
+  --armor:    #1C2E42;
+  --rim:      #243548;
+  --gold:     #C8A84B;
+  --gold2:    #E8C57A;
+  --white:    #EDF2F7;
+  --silver:   #9AAFC4;
+  --ghost:    #526070;
+  --danger:   #E57373;
+  --warn:     #E8C57A;
+}
+
+/* ═══════ RESET & BASE ══════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+html, body { height:100%; }
+body {
+  font-family: 'Exo 2', sans-serif;
+  background: var(--abyss);
+  color: var(--white);
+  font-size: 14px;
+  line-height: 1.5;
+}
+button { cursor:pointer; border:none; outline:none; font-family: inherit; }
+input, select, textarea {
+  font-family: inherit;
+  background: var(--steel);
+  border: 1px solid var(--armor);
+  color: var(--white);
+  outline: none;
+  border-radius: 2px;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--g-mid); }
+input::placeholder { color: var(--ghost); }
+a { color: inherit; text-decoration: none; }
+
+/* ═══════ LAYOUT ════════════════════════════════════════════ */
+.app { display:flex; min-height:100vh; }
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: var(--carbon);
+  border-right: 1px solid var(--armor);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.sidebar-logo {
+  padding: 22px 20px 18px;
+  border-bottom: 1px solid var(--armor);
+}
+.sidebar-logo .name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  letter-spacing: 6px;
+  color: var(--white);
+  line-height: 1;
+}
+.sidebar-logo .name span { color: var(--g-light); }
+.sidebar-logo .sub {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--ghost);
+  margin-top: 3px;
+}
+.sidebar-nav { padding: 12px 0; flex:1; }
+.nav-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--ghost);
+  padding: 10px 20px 6px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--silver);
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: all .15s;
+}
+.nav-item:hover { color: var(--white); background: rgba(255,255,255,.03); }
+.nav-item.active {
+  color: var(--g-light);
+  border-left-color: var(--g-mid);
+  background: rgba(74,140,71,.08);
+}
+.nav-item .icon { width: 16px; height: 16px; stroke: currentColor; fill:none; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--armor);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px;
+  color: var(--ghost);
+  letter-spacing: 1px;
+}
+.status-dot {
+  display: inline-block; width:6px; height:6px;
+  border-radius:50%; background: var(--g-light); margin-right:5px;
+}
+
+/* ── Main ── */
+.main { flex:1; display:flex; flex-direction:column; min-width:0; }
+
+.topbar {
+  background: var(--carbon);
+  border-bottom: 1px solid var(--armor);
+  padding: 0 24px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.topbar-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 3px;
+  color: var(--white);
+}
+.search-wrap { position: relative; flex:1; max-width: 320px; }
+.search-wrap svg {
+  position: absolute; left:10px; top:50%; transform:translateY(-50%);
+  width:14px; height:14px; stroke:var(--ghost); fill:none;
+  stroke-width:1.5; stroke-linecap:round;
+}
+.search-input {
+  width:100%; padding:7px 12px 7px 32px;
+  font-size:12px; border-radius:2px;
+}
+.topbar-user {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--ghost);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--g-deep);
+  border: 1px solid var(--g-mid);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 12px;
+  color: var(--g-light);
+  letter-spacing: 1px;
+}
+
+.content { padding: 24px; flex:1; }
+
+/* ═══════ PÁGINAS ═══════════════════════════════════════════ */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── KPI Cards ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 2px;
+  margin-bottom: 24px;
+}
+.kpi {
+  background: var(--slate);
+  padding: 18px 20px;
+  border-top: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+.kpi.green { border-top-color: var(--g-mid); }
+.kpi.gold  { border-top-color: var(--gold); }
+.kpi.warn  { border-top-color: var(--warn); }
+.kpi.danger{ border-top-color: var(--danger); }
+.kpi-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--ghost);
+  margin-bottom: 6px;
+}
+.kpi-value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 32px;
+  letter-spacing: 2px;
+  color: var(--white);
+  line-height: 1;
+}
+.kpi-value .unit { color: var(--g-light); font-size: 20px; }
+.kpi-value.gold-val .unit { color: var(--gold2); }
+.kpi-sub {
+  font-family: 'Exo 2', sans-serif;
+  font-size: 11px;
+  color: var(--ghost);
+  margin-top: 4px;
+}
+
+/* ── Section header ── */
+.sec-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.sec-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--g-light);
+  border-left: 2px solid var(--g-mid);
+  padding-left: 10px;
+}
+
+/* ── Tabla ── */
+.table-wrap {
+  background: var(--slate);
+  border: 1px solid var(--armor);
+  overflow-x: auto;
+}
+.inv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 700px;
+}
+.inv-table thead tr {
+  background: var(--steel);
+  border-bottom: 1px solid var(--armor);
+}
+.inv-table th {
+  padding: 10px 12px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--silver);
+  text-align: left;
+  white-space: nowrap;
+}
+.inv-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid rgba(28,46,66,.8);
+  vertical-align: middle;
+  color: var(--silver);
+}
+.inv-table tbody tr:hover { background: rgba(255,255,255,.02); }
+.inv-table .sku {
+  font-family: 'Exo 2', monospace;
+  font-size: 11px;
+  color: var(--g-text, #8FCE8C);
+  font-weight: 600;
+}
+.inv-table .nombre { color: var(--white); font-weight: 600; }
+.inv-table .precio {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 16px;
+  letter-spacing: 1px;
+  color: var(--g-light);
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 1px;
+}
+.badge-ok    { background:rgba(42,92,40,.25); color:var(--g-light);  border:1px solid rgba(74,140,71,.3); }
+.badge-warn  { background:rgba(232,197,122,.15); color:var(--gold2); border:1px solid rgba(200,168,75,.25); }
+.badge-err   { background:rgba(229,115,115,.12); color:var(--danger); border:1px solid rgba(229,115,115,.2); }
+.badge-cat   { background:rgba(14,27,45,.8); color:var(--silver); border:1px solid var(--armor); }
+
+/* Stock indicator */
+.stock-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 1px;
+}
+.stock-ok   { color: var(--g-light); }
+.stock-warn { color: var(--gold2); }
+.stock-err  { color: var(--danger); }
+
+/* ── Botones ── */
+.btn {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 9px 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: all .15s;
+}
+.btn svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:1.5; stroke-linecap:round; flex-shrink:0; }
+.btn-primary {
+  background: var(--g-deep);
+  color: var(--white);
+  border: 1px solid var(--g-mid);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+}
+.btn-primary:hover { background: var(--g-mid); }
+.btn-outline {
+  background: transparent;
+  color: var(--g-light);
+  border: 1px solid var(--g-mid);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+}
+.btn-outline:hover { background: rgba(74,140,71,.1); }
+.btn-sm { padding: 6px 14px; font-size: 10px; }
+.btn-danger { background:rgba(229,115,115,.12); color:var(--danger); border:1px solid rgba(229,115,115,.2); }
+.btn-gold   { background:rgba(200,168,75,.1); color:var(--gold2); border:1px solid rgba(200,168,75,.2);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px)); }
+
+/* ── Filtros ── */
+.filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.filter-select {
+  padding: 7px 10px;
+  font-size: 11px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  letter-spacing: 1px;
+  border-radius: 2px;
+  min-width: 130px;
+}
+.filter-select option { background: var(--slate); }
+
+/* ── Modal ── */
+.modal-overlay {
+  display: none;
+  position: fixed; inset:0;
+  background: rgba(7,13,20,.85);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--slate);
+  border: 1px solid var(--armor);
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-header {
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--armor);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 3px;
+  color: var(--white);
+}
+.modal-close {
+  background: none;
+  color: var(--ghost);
+  font-size: 20px;
+  line-height: 1;
+  padding: 2px 6px;
+}
+.modal-close:hover { color: var(--white); }
+.modal-body { padding: 20px; }
+.modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid var(--armor);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* Formulario */
+.form-group { margin-bottom: 16px; }
+.form-label {
+  display: block;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ghost);
+  margin-bottom: 5px;
+}
+.form-input {
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 13px;
+  border-radius: 2px;
+}
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-hint { font-size: 11px; color: var(--ghost); margin-top: 4px; }
+
+/* ── Toast ── */
+.toast-wrap {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toast {
+  background: var(--steel);
+  border: 1px solid var(--armor);
+  border-left: 3px solid var(--g-mid);
+  padding: 12px 16px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--white);
+  min-width: 240px;
+  animation: slideIn .2s ease;
+}
+.toast.error { border-left-color: var(--danger); }
+.toast.warn  { border-left-color: var(--warn); }
+@keyframes slideIn { from { transform: translateX(100%); opacity:0; } to { transform:translateX(0); opacity:1; } }
+
+/* ── Log table ── */
+.log-table { width:100%; border-collapse:collapse; font-size:12px; min-width:600px; }
+.log-table th {
+  padding: 9px 12px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 9px; font-weight:700; letter-spacing:2px; text-transform:uppercase;
+  color: var(--silver); background: var(--steel);
+  border-bottom: 1px solid var(--armor); text-align:left;
+}
+.log-table td { padding:8px 12px; border-bottom:1px solid rgba(28,46,66,.6); color:var(--silver); }
+.log-total { font-family:'Bebas Neue',sans-serif; font-size:16px; color:var(--g-light); }
+
+/* ── Loading ── */
+.loader-wrap {
+  display: flex; align-items:center; justify-content:center;
+  padding: 60px; flex-direction: column; gap: 16px;
+}
+.loader {
+  width: 32px; height:32px;
+  border: 2px solid var(--armor);
+  border-top-color: var(--g-mid);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loader-text {
+  font-family:'Rajdhani',sans-serif; font-size:11px;
+  letter-spacing:3px; text-transform:uppercase; color:var(--ghost);
+}
+
+/* ── Empty state ── */
+.empty {
+  text-align:center; padding:60px 20px;
+  font-family:'Rajdhani',sans-serif; color:var(--ghost);
+  font-size:13px; letter-spacing:1px;
+}
+
+/* ── Resumen por marca ── */
+.brand-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:2px; margin-top:14px; }
+.brand-card { background:var(--steel); padding:16px; border-top:1.5px solid var(--armor); }
+.brand-card.on { border-top-color:var(--g-mid); }
+.brand-card.nb { border-top-color:var(--gold); }
+.brand-name { font-family:'Bebas Neue',sans-serif; font-size:16px; letter-spacing:2px; color:var(--white); }
+.brand-stats { display:flex; gap:16px; margin-top:8px; }
+.brand-stat-n { font-family:'Bebas Neue',sans-serif; font-size:22px; color:var(--g-light); }
+.brand-stat-l { font-family:'Rajdhani',sans-serif; font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--ghost); }
+
+/* ═══════ RESPONSIVE ════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed; left:-220px; top:0; height:100vh; z-index:50;
+    transition: left .25s ease;
+  }
+  .sidebar.open { left:0; }
+  .menu-toggle { display:flex !important; }
+  .content { padding: 16px; }
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+  .topbar { padding: 0 14px; }
+}
+.menu-toggle {
+  display: none;
+  background: none;
+  color: var(--silver);
+  padding: 6px;
+  align-items: center;
+}
+.menu-toggle svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.5; }
+.overlay-bg {
+  display: none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:40;
+}
+.overlay-bg.open { display:block; }
+</style>
+</head>
+<body>
+
+<!-- ═══ TOAST ═══ -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ═══ OVERLAY MOBILE ═══ -->
+<div class="overlay-bg" id="overlayBg" onclick="closeSidebar()"></div>
+
+<!-- ═══ APP ═══ -->
+<div class="app">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="name">FIT<span>4U</span></div>
+      <div class="sub">Sistema de Inventario</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-label">Principal</div>
+      <div class="nav-item active" onclick="goTo('dashboard')">
+        <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" onclick="goTo('inventario')">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        Inventario
+      </div>
+      <div class="nav-item" onclick="goTo('ventas')">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        Registrar venta
+      </div>
+      <div class="nav-item" onclick="goTo('log')">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Historial ventas
+      </div>
+      <div class="nav-label" style="margin-top:8px">Gestión</div>
+      <div class="nav-item" onclick="goTo('agregar')">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Agregar producto
+      </div>
+      <div class="nav-item" onclick="reloadData()">
+        <svg class="icon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Sincronizar
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <span class="status-dot"></span>
+      <span id="syncStatus">Conectado a Sheets</span>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-toggle" onclick="toggleSidebar()">
+        <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-title" id="pageTitle">Dashboard</div>
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="search-input" id="searchInput" placeholder="Buscar SKU, modelo, color..." oninput="onSearch(this.value)">
+      </div>
+      <div class="topbar-user">
+        <div class="avatar">F4</div>
+        <span id="userName">Ventas</span>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- ════ DASHBOARD ════ -->
+      <section class="page active" id="page-dashboard">
+        <div class="kpi-grid" id="kpiGrid">
+          <div class="loader-wrap"><div class="loader"></div><div class="loader-text">Cargando datos...</div></div>
+        </div>
+        <div class="sec-hdr">
+          <div class="sec-title">Por marca</div>
+          <button class="btn btn-outline btn-sm" onclick="reloadData()">
+            <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Actualizar
+          </button>
+        </div>
+        <div class="brand-grid" id="brandGrid"></div>
+      </section>
+
+      <!-- ════ INVENTARIO ════ -->
+      <section class="page" id="page-inventario">
+        <div class="filters">
+          <select class="filter-select" id="filterCat" onchange="applyFilters()">
+            <option value="">Todas las categorías</option>
+          </select>
+          <select class="filter-select" id="filterMarca" onchange="applyFilters()">
+            <option value="">Todas las marcas</option>
+          </select>
+          <select class="filter-select" id="filterEstatus" onchange="applyFilters()">
+            <option value="">Todos los estados</option>
+            <option>Disponible</option>
+            <option>Últimas piezas</option>
+            <option>Sin stock</option>
+          </select>
+        </div>
+        <div class="sec-hdr">
+          <div class="sec-title" id="invCount">Cargando...</div>
+          <button class="btn btn-primary btn-sm" onclick="goTo('agregar')">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Agregar
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table class="inv-table">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Marca</th>
+                <th>Modelo</th>
+                <th>Color</th>
+                <th>Talla</th>
+                <th>Categoría</th>
+                <th>Stock</th>
+                <th>Precio</th>
+                <th>Estatus</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="invBody">
+              <tr><td colspan="10"><div class="loader-wrap"><div class="loader"></div><div class="loader-text">Cargando inventario...</div></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ════ REGISTRAR VENTA ════ -->
+      <section class="page" id="page-ventas">
+        <div style="max-width:480px">
+          <div class="form-group">
+            <label class="form-label">Buscar producto por SKU o nombre</label>
+            <input class="form-input" id="ventaBuscar" placeholder="Escribe SKU, modelo o color..." oninput="buscarParaVenta(this.value)">
+          </div>
+          <div id="ventaResultados" style="margin-bottom:16px"></div>
+          <div id="ventaForm" style="display:none">
+            <div style="background:var(--steel);border:1px solid var(--armor);padding:16px;margin-bottom:16px">
+              <div style="font-family:'Rajdhani',sans-serif;font-size:10px;letter-spacing:2px;color:var(--ghost);text-transform:uppercase;margin-bottom:6px">Producto seleccionado</div>
+              <div id="ventaProductoInfo"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Cantidad *</label>
+                <input class="form-input" id="ventaCantidad" type="number" min="1" value="1" placeholder="1">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Vendedor</label>
+                <input class="form-input" id="ventaVendedor" placeholder="Tu nombre">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nota (opcional)</label>
+              <input class="form-input" id="ventaNota" placeholder="Ej: pago en efectivo, envío...">
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--armor);border-bottom:1px solid var(--armor);margin-bottom:16px">
+              <span style="font-family:'Rajdhani',sans-serif;font-size:11px;letter-spacing:2px;color:var(--ghost);text-transform:uppercase">Total estimado</span>
+              <span class="kpi-value" id="ventaTotal" style="font-size:24px">$0</span>
+            </div>
+            <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" onclick="confirmarVenta()">
+              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              Confirmar venta
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════ HISTORIAL ════ -->
+      <section class="page" id="page-log">
+        <div class="sec-hdr">
+          <div class="sec-title" id="logCount">Historial de ventas</div>
+          <button class="btn btn-outline btn-sm" onclick="loadLog()">
+            <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Actualizar
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table class="log-table">
+            <thead>
+              <tr><th>Fecha</th><th>SKU</th><th>Modelo</th><th>Color</th><th>Talla</th><th>Cant.</th><th>Precio</th><th>Total</th><th>Vendedor</th><th>Nota</th></tr>
+            </thead>
+            <tbody id="logBody">
+              <tr><td colspan="10"><div class="loader-wrap"><div class="loader"></div></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ════ AGREGAR PRODUCTO ════ -->
+      <section class="page" id="page-agregar">
+        <div style="max-width:560px">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">SKU *</label>
+              <input class="form-input" id="addSku" placeholder="ej: ON-CM2-250">
+              <div class="form-hint">Código único. No se puede cambiar después.</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Categoría *</label>
+              <select class="form-input" id="addCat">
+                <option>Calzado</option>
+                <option>Ropa deportiva</option>
+                <option>Accesorios</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Marca *</label>
+              <input class="form-input" id="addMarca" placeholder="ej: On Running">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Modelo *</label>
+              <input class="form-input" id="addModelo" placeholder="ej: Cloudtec Phase">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Color / Variante</label>
+              <input class="form-input" id="addColor" placeholder="ej: Azul / Blanco">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Talla</label>
+              <input class="form-input" id="addTalla" placeholder="ej: 26">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Género</label>
+              <select class="form-input" id="addGenero">
+                <option>Unisex</option><option>Hombre</option><option>Mujer</option><option>Niño</option><option>Niña</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Stock inicial *</label>
+              <input class="form-input" id="addStock" type="number" min="0" value="1">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Costo MXN *</label>
+              <input class="form-input" id="addCosto" type="number" min="0" placeholder="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Precio venta MXN *</label>
+              <input class="form-input" id="addPrecio" type="number" min="0" placeholder="0">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tipo de uso</label>
+            <input class="form-input" id="addUso" placeholder="ej: Running · Lifestyle">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notas</label>
+            <input class="form-input" id="addNotas" placeholder="Información adicional...">
+          </div>
+          <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;margin-top:4px" onclick="guardarProducto()">
+            <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Guardar producto en Sheets
+          </button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ═══ MODAL EDITAR ═══ -->
+<div class="modal-overlay" id="modalEditar">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Editar producto</div>
+      <button class="modal-close" onclick="closeModal('modalEditar')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="editSkuLabel" style="font-family:'Exo 2',monospace;font-size:12px;color:var(--g-light);margin-bottom:16px;font-weight:600"></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Stock</label>
+          <input class="form-input" id="editStock" type="number" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Precio venta MXN</label>
+          <input class="form-input" id="editPrecio" type="number" min="0">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Costo MXN</label>
+          <input class="form-input" id="editCosto" type="number" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estatus</label>
+          <select class="form-input" id="editEstatus">
+            <option>Disponible</option>
+            <option>Últimas piezas</option>
+            <option>Sin stock</option>
+            <option>Reservado</option>
+            <option>Descontinuado</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notas</label>
+        <input class="form-input" id="editNotas" placeholder="Observaciones...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modalEditar')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="guardarEdicion()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CONFIGURACIÓN — cambia solo esta línea
+// ═══════════════════════════════════════════════════════
+const API_URL = "https://script.google.com/macros/s/AKfycbz-3wfuk_3JeFZPT6E5Y9RpnZVJschanbvbOGHYoWpdW-a5-D8GFX4BWX_bZJtlE9TxZw/exec"; // ← URL de tu Apps Script desplegado
+
+// ═══════════════════════════════════════════════════════
+// ESTADO GLOBAL
+// ═══════════════════════════════════════════════════════
+let allProducts  = [];
+let filtered     = [];
+let editingSku   = null;
+let ventaSku     = null;
+
+// ═══════════════════════════════════════════════════════
+// NAVEGACIÓN
+// ═══════════════════════════════════════════════════════
+function goTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelector(`[onclick="goTo('${page}')"]`).classList.add('active');
+  const titles = {
+    dashboard:'Dashboard', inventario:'Inventario', ventas:'Registrar venta',
+    log:'Historial de ventas', agregar:'Agregar producto'
+  };
+  document.getElementById('pageTitle').textContent = titles[page] || page;
+  if (page === 'log') loadLog();
+  closeSidebar();
+}
+function toggleSidebar()  { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlayBg').classList.toggle('open'); }
+function closeSidebar()   { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlayBg').classList.remove('open'); }
+
+// ═══════════════════════════════════════════════════════
+// API
+// ═══════════════════════════════════════════════════════
+async function apiFetch(params) {
+  const url = API_URL + '?' + new URLSearchParams(params);
+  const r = await fetch(url);
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error || 'Error desconocido');
+  return j.data;
+}
+async function apiPost(body) {
+  const r = await fetch(API_URL, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error || 'Error desconocido');
+  return j.data;
+}
+
+// ═══════════════════════════════════════════════════════
+// CARGA DE DATOS
+// ═══════════════════════════════════════════════════════
+async function reloadData() {
+  toast('Sincronizando con Google Sheets...');
+  try {
+    allProducts = await apiFetch({action:'inventory'});
+    filtered = [...allProducts];
+    buildDashboard();
+    buildInventario();
+    populateFilters();
+    setStatus('Sincronizado · ' + new Date().toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit'}));
+    toast('Inventario actualizado', 'ok');
+  } catch(e) {
+    toast('Error: ' + e.message, 'error');
+    setStatus('Error de conexión');
+  }
+}
+
+function setStatus(msg) { document.getElementById('syncStatus').textContent = msg; }
+
+// ═══════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════
+function buildDashboard() {
+  const items = allProducts;
+  const total    = items.length;
+  const piezas   = items.reduce((s,i)=>s+i.stock,0);
+  const inv      = items.reduce((s,i)=>s+(i.stock*i.costo),0);
+  const valor    = items.reduce((s,i)=>s+(i.stock*i.precio),0);
+  const sinStock = items.filter(i=>i.stock===0).length;
+  const bajo     = items.filter(i=>i.stock>0&&i.stock<=i.stockMin).length;
+
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi green">
+      <div class="kpi-label">Total SKUs</div>
+      <div class="kpi-value">${total}<span class="unit">+</span></div>
+      <div class="kpi-sub">productos únicos</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-label">Total piezas</div>
+      <div class="kpi-value">${piezas.toLocaleString()}</div>
+      <div class="kpi-sub">en inventario</div>
+    </div>
+    <div class="kpi gold">
+      <div class="kpi-label">Inversión total</div>
+      <div class="kpi-value gold-val">$${Math.round(inv/1000)}K<span class="unit" style="color:var(--gold2)">MXN</span></div>
+      <div class="kpi-sub">costo en stock</div>
+    </div>
+    <div class="kpi gold">
+      <div class="kpi-label">Valor a precio venta</div>
+      <div class="kpi-value gold-val">$${Math.round(valor/1000)}K<span class="unit" style="color:var(--gold2)">MXN</span></div>
+      <div class="kpi-sub">margen potencial</div>
+    </div>
+    <div class="kpi ${sinStock>0?'danger':'green'}">
+      <div class="kpi-label">Sin stock</div>
+      <div class="kpi-value" style="color:${sinStock>0?'var(--danger)':'var(--g-light)'}">${sinStock}</div>
+      <div class="kpi-sub">SKUs agotados</div>
+    </div>
+    <div class="kpi ${bajo>0?'warn':'green'}">
+      <div class="kpi-label">Stock bajo</div>
+      <div class="kpi-value" style="color:${bajo>0?'var(--gold2)':'var(--g-light)'}">${bajo}</div>
+      <div class="kpi-sub">piezas ≤ mínimo</div>
+    </div>
+  `;
+
+  // Por marca
+  const marcas = {};
+  items.forEach(i=>{
+    if(!marcas[i.marca]) marcas[i.marca]={skus:0,piezas:0,inv:0};
+    marcas[i.marca].skus++;
+    marcas[i.marca].piezas+=i.stock;
+    marcas[i.marca].inv+=i.stock*i.precio;
+  });
+  const brandGrid = document.getElementById('brandGrid');
+  brandGrid.innerHTML = Object.entries(marcas)
+    .sort((a,b)=>b[1].skus-a[1].skus)
+    .map(([m,d])=>`
+    <div class="brand-card ${m.includes('On')?'on':m.includes('New')?'nb':''}">
+      <div class="brand-name">${m}</div>
+      <div class="brand-stats">
+        <div><div class="brand-stat-n">${d.skus}</div><div class="brand-stat-l">SKUs</div></div>
+        <div><div class="brand-stat-n">${d.piezas}</div><div class="brand-stat-l">Piezas</div></div>
+        <div><div class="brand-stat-n" style="color:var(--gold2);font-size:16px">$${Math.round(d.inv/1000)}K</div><div class="brand-stat-l">Valor</div></div>
+      </div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// INVENTARIO
+// ═══════════════════════════════════════════════════════
+function populateFilters() {
+  const cats   = [...new Set(allProducts.map(p=>p.categoria).filter(Boolean))];
+  const marcas = [...new Set(allProducts.map(p=>p.marca).filter(Boolean))];
+  const fc = document.getElementById('filterCat');
+  const fm = document.getElementById('filterMarca');
+  fc.innerHTML = '<option value="">Todas las categorías</option>' + cats.map(c=>`<option>${c}</option>`).join('');
+  fm.innerHTML = '<option value="">Todas las marcas</option>'     + marcas.map(m=>`<option>${m}</option>`).join('');
+}
+
+function applyFilters() {
+  const cat  = document.getElementById('filterCat').value;
+  const mar  = document.getElementById('filterMarca').value;
+  const est  = document.getElementById('filterEstatus').value;
+  const q    = document.getElementById('searchInput').value.toLowerCase();
+  filtered = allProducts.filter(p =>
+    (!cat || p.categoria===cat) &&
+    (!mar || p.marca===mar) &&
+    (!est || p.estatus===est) &&
+    (!q   || [p.sku,p.modelo,p.color,p.marca,p.talla].join(' ').toLowerCase().includes(q))
+  );
+  buildInventario();
+}
+
+function onSearch(q) {
+  goTo('inventario');
+  applyFilters();
+}
+
+function buildInventario() {
+  const count = document.getElementById('invCount');
+  count.textContent = `${filtered.length} productos`;
+  const tbody = document.getElementById('invBody');
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty">Sin resultados</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = filtered.map(p => {
+    const sc = p.stock===0?'stock-err':p.stock<=p.stockMin?'stock-warn':'stock-ok';
+    const bc = p.estatus==='Sin stock'?'badge-err':p.estatus==='Últimas piezas'?'badge-warn':'badge-ok';
+    return `<tr>
+      <td class="sku">${p.sku}</td>
+      <td style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;color:var(--white)">${p.marca}</td>
+      <td class="nombre">${p.modelo}</td>
+      <td style="color:var(--silver)">${p.color}</td>
+      <td style="text-align:center;color:var(--silver)">${p.talla}</td>
+      <td><span class="badge badge-cat">${p.categoria}</span></td>
+      <td style="text-align:center"><span class="stock-num ${sc}">${p.stock}</span></td>
+      <td class="precio">$${p.precio.toLocaleString()}</td>
+      <td><span class="badge ${bc}">${p.estatus}</span></td>
+      <td>
+        <button class="btn btn-outline btn-sm" onclick="abrirEditar('${p.sku}')">Editar</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// EDITAR
+// ═══════════════════════════════════════════════════════
+function abrirEditar(sku) {
+  const p = allProducts.find(x=>x.sku===sku);
+  if (!p) return;
+  editingSku = sku;
+  document.getElementById('editSkuLabel').textContent = sku + ' — ' + p.modelo + ' ' + p.color;
+  document.getElementById('editStock').value   = p.stock;
+  document.getElementById('editPrecio').value  = p.precio;
+  document.getElementById('editCosto').value   = p.costo;
+  document.getElementById('editEstatus').value = p.estatus;
+  document.getElementById('editNotas').value   = p.notas||'';
+  document.getElementById('modalEditar').classList.add('open');
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+async function guardarEdicion() {
+  if (!editingSku) return;
+  try {
+    await apiPost({
+      action:'update', sku: editingSku,
+      stock:   document.getElementById('editStock').value,
+      precio:  document.getElementById('editPrecio').value,
+      costo:   document.getElementById('editCosto').value,
+      estatus: document.getElementById('editEstatus').value,
+      notas:   document.getElementById('editNotas').value
+    });
+    closeModal('modalEditar');
+    toast('Producto actualizado en Sheets', 'ok');
+    await reloadData();
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+// ═══════════════════════════════════════════════════════
+// VENTAS
+// ═══════════════════════════════════════════════════════
+function buscarParaVenta(q) {
+  const res = document.getElementById('ventaResultados');
+  ventaSku  = null;
+  document.getElementById('ventaForm').style.display = 'none';
+  if (!q.trim()) { res.innerHTML=''; return; }
+  const term = q.toLowerCase();
+  const hits = allProducts.filter(p=>p.stock>0&&
+    [p.sku,p.modelo,p.color,p.talla].join(' ').toLowerCase().includes(term)
+  ).slice(0,6);
+  if (!hits.length) { res.innerHTML=`<div class="empty" style="padding:20px">Sin resultados con stock disponible</div>`; return; }
+  res.innerHTML = hits.map(p=>`
+    <div onclick="seleccionarVenta('${p.sku}')" style="
+      background:var(--steel);border:1px solid var(--armor);
+      padding:12px 14px;margin-bottom:4px;cursor:pointer;
+      display:flex;justify-content:space-between;align-items:center;
+      border-left:2px solid transparent;
+      transition:border-color .15s
+    " onmouseover="this.style.borderLeftColor='var(--g-mid)'" onmouseout="this.style.borderLeftColor='transparent'">
+      <div>
+        <div style="font-family:'Exo 2',sans-serif;font-size:11px;color:var(--g-light);font-weight:600">${p.sku}</div>
+        <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:var(--white)">${p.modelo} — ${p.color}</div>
+        <div style="font-size:11px;color:var(--ghost)">Talla ${p.talla} · ${p.marca}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--g-light)">$${p.precio.toLocaleString()}</div>
+        <div style="font-size:11px;color:${p.stock<=p.stockMin?'var(--gold2)':'var(--silver)'}">Stock: ${p.stock}</div>
+      </div>
+    </div>`).join('');
+}
+
+function seleccionarVenta(sku) {
+  const p = allProducts.find(x=>x.sku===sku);
+  if (!p) return;
+  ventaSku = sku;
+  document.getElementById('ventaBuscar').value = p.modelo+' '+p.color+' T'+p.talla;
+  document.getElementById('ventaResultados').innerHTML='';
+  document.getElementById('ventaProductoInfo').innerHTML=`
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:var(--white)">${p.modelo}</div>
+    <div style="font-size:12px;color:var(--silver);margin-top:3px">${p.color} · Talla ${p.talla} · ${p.marca}</div>
+    <div style="margin-top:8px;display:flex;gap:16px">
+      <div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--g-light)">$${p.precio.toLocaleString()}</div><div style="font-size:10px;color:var(--ghost)">precio unit</div></div>
+      <div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${p.stock<=p.stockMin?'var(--gold2)':'var(--white)'}">${p.stock}</div><div style="font-size:10px;color:var(--ghost)">en stock</div></div>
+    </div>`;
+  document.getElementById('ventaForm').style.display='block';
+  document.getElementById('ventaCantidad').max = p.stock;
+  actualizarTotal();
+}
+
+function actualizarTotal() {
+  const p = allProducts.find(x=>x.sku===ventaSku);
+  if (!p) return;
+  const cant = Number(document.getElementById('ventaCantidad').value)||1;
+  document.getElementById('ventaTotal').textContent = '$'+(p.precio*cant).toLocaleString();
+}
+document.addEventListener('input', e=>{ if(e.target.id==='ventaCantidad') actualizarTotal(); });
+
+async function confirmarVenta() {
+  if (!ventaSku) return;
+  const cant  = document.getElementById('vendedor')?.value;
+  const cants = Number(document.getElementById('ventaCantidad').value)||1;
+  const vend  = document.getElementById('ventaVendedor').value||'Ventas';
+  const nota  = document.getElementById('ventaNota').value;
+  try {
+    await apiPost({action:'sell', sku:ventaSku, cantidad:cants, vendedor:vend, nota});
+    toast(`Venta registrada: ${cants} pz de ${ventaSku}`, 'ok');
+    document.getElementById('ventaBuscar').value='';
+    document.getElementById('ventaResultados').innerHTML='';
+    document.getElementById('ventaForm').style.display='none';
+    ventaSku=null;
+    await reloadData();
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+// ═══════════════════════════════════════════════════════
+// LOG
+// ═══════════════════════════════════════════════════════
+async function loadLog() {
+  document.getElementById('logBody').innerHTML =
+    `<tr><td colspan="10"><div class="loader-wrap"><div class="loader"></div></div></td></tr>`;
+  try {
+    const log = await apiFetch({action:'log'});
+    document.getElementById('logCount').textContent = `${log.length} ventas registradas`;
+    if (!log.length) {
+      document.getElementById('logBody').innerHTML =
+        `<tr><td colspan="10"><div class="empty">Aún no hay ventas registradas</div></td></tr>`;
+      return;
+    }
+    document.getElementById('logBody').innerHTML = log.map(l=>`<tr>
+      <td style="font-size:11px;color:var(--ghost)">${l['Fecha']||''}</td>
+      <td class="sku">${l['SKU']||''}</td>
+      <td style="color:var(--white)">${l['Modelo']||''}</td>
+      <td style="color:var(--silver)">${l['Color']||''}</td>
+      <td style="text-align:center">${l['Talla']||''}</td>
+      <td style="text-align:center;color:var(--white);font-weight:600">${l['Cantidad']||''}</td>
+      <td>$${Number(l['Precio Unit']||0).toLocaleString()}</td>
+      <td class="log-total">$${Number(l['Total']||0).toLocaleString()}</td>
+      <td style="color:var(--silver)">${l['Vendedor']||''}</td>
+      <td style="font-size:11px;color:var(--ghost)">${l['Nota']||''}</td>
+    </tr>`).join('');
+  } catch(e) { toast('Error al cargar log: '+e.message,'error'); }
+}
+
+// ═══════════════════════════════════════════════════════
+// AGREGAR PRODUCTO
+// ═══════════════════════════════════════════════════════
+async function guardarProducto() {
+  const sku    = document.getElementById('addSku').value.trim();
+  const marca  = document.getElementById('addMarca').value.trim();
+  const modelo = document.getElementById('addModelo').value.trim();
+  const precio = document.getElementById('addPrecio').value;
+  const costo  = document.getElementById('addCosto').value;
+  const stock  = document.getElementById('addStock').value;
+  if (!sku||!marca||!modelo||!precio||!costo) {
+    toast('Completa los campos obligatorios (*)','warn'); return;
+  }
+  try {
+    await apiPost({
+      action:'add', sku, marca, modelo,
+      categoria: document.getElementById('addCat').value,
+      color:  document.getElementById('addColor').value,
+      talla:  document.getElementById('addTalla').value,
+      genero: document.getElementById('addGenero').value,
+      uso:    document.getElementById('addUso').value,
+      stock, stockMin:1, costo, precio,
+      notas:  document.getElementById('addNotas').value
+    });
+    toast('Producto agregado a Sheets', 'ok');
+    ['addSku','addMarca','addModelo','addColor','addTalla','addCosto','addPrecio','addUso','addNotas'].forEach(id=>{
+      document.getElementById(id).value='';
+    });
+    document.getElementById('addStock').value='1';
+    await reloadData();
+    goTo('inventario');
+  } catch(e) { toast('Error: '+e.message,'error'); }
+}
+
+// ═══════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════
+function toast(msg, type='info') {
+  const w = document.getElementById('toastWrap');
+  const t = document.createElement('div');
+  t.className = 'toast' + (type==='error'?' error':type==='warn'?' warn':'');
+  t.textContent = msg;
+  w.appendChild(t);
+  setTimeout(()=>t.remove(), 3500);
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+window.addEventListener('load', ()=>{
+  if (API_URL === "https://script.google.com/macros/s/AKfycbz-3wfuk_3JeFZPT6E5Y9RpnZVJschanbvbOGHYoWpdW-a5-D8GFX4BWX_bZJtlE9TxZw/exec") {
+    toast("⚠ Configura la API_URL en el código con tu URL de Apps Script", 'warn');
+    document.getElementById('kpiGrid').innerHTML =
+      `<div style="padding:24px;font-family:'Rajdhani',sans-serif;color:var(--gold2);letter-spacing:1px;grid-column:1/-1">
+        Abre el archivo index.html y reemplaza <strong>https://script.google.com/macros/s/AKfycbz-3wfuk_3JeFZPT6E5Y9RpnZVJschanbvbOGHYoWpdW-a5-D8GFX4BWX_bZJtlE9TxZw/exec</strong> con la URL de tu Apps Script desplegado.
+      </div>`;
+    setStatus('Sin configurar');
+    return;
+  }
+  reloadData();
+});
+</script>
+</body>
+</html>
