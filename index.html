@@ -396,8 +396,14 @@ async function apiFetch(params){
   return j.data;
 }
 async function apiPost(body){
-  const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  const j=await r.json();
+  // Usamos GET con parametros para evitar CORS en POST
+  // Encodamos el body como parametro "payload"
+  const params = new URLSearchParams({
+    action: body.action,
+    payload: JSON.stringify(body)
+  });
+  const r = await fetch(API + '?' + params);
+  const j = await r.json();
   if(!j.ok) throw new Error(j.error||'Error');
   return j.data;
 }
